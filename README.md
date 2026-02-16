@@ -1,2 +1,3 @@
 # budget-loan-tracker
-A new design
+A design to help you understand your liabilities
+https://budget-loan-tracker-3trrf8revraaxkvmdxcj2i.streamlit.app/
