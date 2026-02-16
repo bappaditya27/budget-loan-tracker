@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="GramVikas Finance Planner", layout="wide")
+st.set_page_config(page_title="Finance Planner", layout="wide")
 
 # Custom CSS to make it look cleaner
 st.markdown("""
@@ -12,7 +12,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏡 GramVikas: Smart Expenditure Planner")
+st.title("🏡 Smart Expenditure Planner")
 st.write("Plan your journey from customer support to your dream village home.")
 
 # --- SIDEBAR: INPUTS ---
@@ -22,7 +22,7 @@ salary = st.sidebar.number_input("In-hand Monthly Salary (₹)", value=20000, st
 st.sidebar.subheader("Fixed Monthly Needs")
 rent = st.sidebar.slider("Rent & Utilities (₹)", 0, 10000, 5000)
 food = st.sidebar.slider("Food & Groceries (₹)", 0, 8000, 4000)
-ngo = st.sidebar.number_input("NGO/Village Society (₹)", value=1000)
+others = st.sidebar.number_input("Others (₹)", value=1000)
 
 # --- DEBT MANAGEMENT ---
 st.header("📉 Debt & EMI Strategy")
@@ -33,7 +33,7 @@ with col_emi:
     emi = st.number_input("Monthly EMI (₹)", value=3000)
 
 # --- CALCULATIONS ---
-total_fixed = rent + food + ngo
+total_fixed = rent + food + others
 total_outflow = total_fixed + emi
 remaining_cash = salary - total_outflow
 savings_percent = (remaining_cash / salary) * 100 if salary > 0 else 0
@@ -56,8 +56,8 @@ with c4:
 # --- VISUAL PLANNING ---
 st.subheader("📊 Your Expenditure Breakdown")
 df_plot = pd.DataFrame({
-    "Category": ["Rent/Utilities", "Food", "NGO", "Debt (EMI)", "Potential Savings"],
-    "Amount": [rent, food, ngo, emi, max(0, remaining_cash)]
+    "Category": ["Rent/Utilities", "Food", "Others", "Debt (EMI)", "Potential Savings"],
+    "Amount": [rent, food, others, emi, max(0, remaining_cash)]
 })
 
 fig = px.bar(df_plot, x="Category", y="Amount", color="Category", 
