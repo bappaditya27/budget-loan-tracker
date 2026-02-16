@@ -2,63 +2,77 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="GramVikas Finance Tracker", layout="wide")
-st.title("📊 Monthly Budget & Loan Amortization")
+st.set_page_config(page_title="GramVikas Finance Planner", layout="wide")
 
-# Sidebar for Inputs
-st.sidebar.header("💰 Monthly Income & Basics")
-salary = st.sidebar.number_input("Monthly In-hand Salary (₹)", value=20000)
-rent = st.sidebar.number_input("Rent & Utilities (₹)", value=5000)
-food = st.sidebar.number_input("Food & Essentials (₹)", value=4000)
-ngo = st.sidebar.number_input("NGO Contribution (₹)", value=1000)
+# Custom CSS to make it look cleaner
+st.markdown("""
+    <style>
+    .main { background-color: #f5f7f9; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+    """, unsafe_allow_html=True)
 
-# Debt Section
-st.header("📉 Debt Details")
-col_a, col_b, col_c = st.columns(3)
-with col_a:
-    loan_name = st.text_input("Loan Name", "Personal Loan")
-with col_b:
-    balance = st.number_input("Remaining Principal (₹)", value=50000)
-with col_c:
-    annual_interest = st.number_input("Annual Interest Rate (%)", value=12.0)
+st.title("🏡 GramVikas: Smart Expenditure Planner")
+st.write("Plan your journey from customer support to your dream village home.")
 
-emi = st.number_input("Monthly EMI (₹)", value=3000)
+# --- SIDEBAR: INPUTS ---
+st.sidebar.header("💳 Income & Fixed Costs")
+salary = st.sidebar.number_input("In-hand Monthly Salary (₹)", value=20000, step=500)
 
-# Amortization Logic
-st.subheader("🗓️ Loan Amortization Table")
-schedule = []
-current_balance = balance
-monthly_rate = annual_interest / (12 * 100)
+st.sidebar.subheader("Fixed Monthly Needs")
+rent = st.sidebar.slider("Rent & Utilities (₹)", 0, 10000, 5000)
+food = st.sidebar.slider("Food & Groceries (₹)", 0, 8000, 4000)
+ngo = st.sidebar.number_input("NGO/Village Society (₹)", value=1000)
 
-month = 1
-while current_balance > 0 and month <= 60: # Limit to 5 years for safety
-    interest_payment = current_balance * monthly_rate
-    principal_payment = min(emi - interest_payment, current_balance)
-    current_balance -= principal_payment
-    
-    schedule.append({
-        "Month": month,
-        "Interest Paid (₹)": round(interest_payment, 2),
-        "Principal Paid (₹)": round(principal_payment, 2),
-        "Remaining Balance (₹)": round(max(0, current_balance), 2)
-    })
-    month += 1
-    if emi <= interest_payment:
-        st.error("Error: Your EMI is too low to cover the interest. The debt will never be paid off!")
-        break
+# --- DEBT MANAGEMENT ---
+st.header("📉 Debt & EMI Strategy")
+col_loan, col_emi = st.columns(2)
+with col_loan:
+    loan_bal = st.number_input("Total Debt Remaining (₹)", value=50000)
+with col_emi:
+    emi = st.number_input("Monthly EMI (₹)", value=3000)
 
-df_schedule = pd.DataFrame(schedule)
+# --- CALCULATIONS ---
+total_fixed = rent + food + ngo
+total_outflow = total_fixed + emi
+remaining_cash = salary - total_outflow
+savings_percent = (remaining_cash / salary) * 100 if salary > 0 else 0
 
-# Display Table & Metrics
-st.dataframe(df_schedule, use_container_width=True)
+# --- DASHBOARD UI ---
+st.divider()
+c1, c2, c3, c4 = st.columns(4)
 
-# Visualizing Interest vs Principal over time
-st.subheader("Interest vs. Principal Trend")
-fig_trend = px.area(df_schedule, x="Month", y=["Interest Paid (₹)", "Principal Paid (₹)"],
-                   title="How your payments change over time",
-                   color_discrete_sequence=['#EF553B', '#00CC96'])
-st.plotly_chart(fig_trend, use_container_width=True)
+with c1:
+    st.metric("Total Outflow", f"₹{total_outflow}")
+with c2:
+    status = "Healthy" if remaining_cash > 2000 else "Tight"
+    st.metric("Budget Status", status, delta=f"{round(savings_percent)}% Savings")
+with c3:
+    st.metric("Net Surplus", f"₹{remaining_cash}")
+with c4:
+    months_to_debt_free = round(loan_bal / emi) if emi > 0 else 0
+    st.metric("Debt-Free In", f"{months_to_debt_free} Months")
 
-# Final Summary
-total_interest = df_schedule["Interest Paid (₹)"].sum()
-st.info(f"Summary: You will pay a total of **₹{total_interest:,.2f}** in interest over **{len(schedule)} months**.")
+# --- VISUAL PLANNING ---
+st.subheader("📊 Your Expenditure Breakdown")
+df_plot = pd.DataFrame({
+    "Category": ["Rent/Utilities", "Food", "NGO", "Debt (EMI)", "Potential Savings"],
+    "Amount": [rent, food, ngo, emi, max(0, remaining_cash)]
+})
+
+fig = px.bar(df_plot, x="Category", y="Amount", color="Category", 
+             text_auto='.2s', title="Monthly Cash Flow")
+st.plotly_chart(fig, use_container_width=True)
+
+# --- THE 'DREAM HOME' PLANNER ---
+st.divider()
+st.subheader("🏗️ Village Home Progress")
+goal_amount = 500000 # Example: 5 Lakhs for construction
+saved_so_far = st.number_input("Current Savings for Home (₹)", value=10000)
+
+if remaining_cash > 0:
+    months_to_goal = round((goal_amount - saved_so_far) / remaining_cash)
+    st.write(f"💡 If you save your entire surplus of **₹{remaining_cash}**, you will reach your ₹5 Lakh goal in **{months_to_goal} months**.")
+    st.progress(min(saved_so_far / goal_amount, 1.0))
+else:
+    st.warning("⚠️ You currently have no surplus to save for your home. Consider reducing expenses or increasing income.")
